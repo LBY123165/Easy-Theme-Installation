@@ -16,50 +16,117 @@ def handle_errors(func):
             return func(*args, **kwargs)
         except:
             return None
-    return wrapper
-
-
-# 获取当前 Windows 内部版本号
-@handle_errors
-def get_windows_version():
-    with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\Microsoft\Windows NT\CurrentVersion') as key:
-        version_number = winreg.QueryValueEx(key, 'CurrentBuildNumber')[0]
-    return int(version_number)
-
-
-# 获取当前 Windows 内部版本号
-version_number = get_windows_version()
-
-# 打印获取到的版本号，如果是None则打印相应的错误信息
-if version_number is not None:
-    if version_number <= 22000 >= 19000:
-        print(f"当前系统版本为 Windows 10，将启动Start10安装程序")
-    elif version_number >= 22000:
-        print(f"当前系统版本为 Windows 11，将启动Start11安装程序")
-    else:
-        start_exe = None
+    return wrappe
 
 # 根据 Windows 版本选择要启动的程序
-if version_number is not None:
-    if version_number <= 22000 >= 19000:
-        start_exe = os.path.abspath('../Tools/Start10.exe')
-    elif version_number >= 22000:
-        start_exe = os.path.abspath('../Tools/Start11.exe')
-    else:
-        start_exe = None
+start_exe = os.path.abspath('../Tools/Start11.exe')
         
     # 打印获取到的启动程序路径，如果是None则打印相应的错误信息
-    if start_exe is not None:
-        print(f"启动: {start_exe}")
-    else:
-        print(f"错误！无法找到 {start_exe}")
+print(f"正在启动start11安装程序")
 
     # 启动程序
-    if start_exe and os.path.exists(start_exe):
+if start_exe and os.path.exists(start_exe):
         try:
             subprocess.run(start_exe, check=True)
         except subprocess.CalledProcessError:
             print(f"错误！ {start_exe} 启动失败！")
+
+# 进行start资源文件复制
+
+print("准备进行start资源文件复制")
+
+def clear_and_copy_files():
+    response = messagebox.askquestion("清除和复制文件", "是否清除start自带资源文件并将咩咩主题文件复制至start资源文件夹")
+    start_buttons_path = r"C:\Program Files (x86)\Stardock\Start11\StartButtons"
+    menu_textures_path = r"C:\Program Files (x86)\Stardock\Start11\MenuTextures"
+    taskbar_textures_path = r"C:\Program Files (x86)\Stardock\Start11\TaskbarTextures"
+
+    if response == 'yes':
+        # Clear files from start_buttons_path, menu_textures_path, and taskbar_textures_path
+        clear_directory(start_buttons_path)
+        clear_directory(menu_textures_path)
+        clear_directory(taskbar_textures_path)
+
+        res_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Res")
+
+        # Copy files from Res/start/win图标 to the respective directories
+        win_icon_folder = os.path.join(res_folder, "start", "win图标")
+        copy_files_to_directory(win_icon_folder, start_buttons_path)
+
+        # Copy files from Res/start/开始背景 to the respective directories
+        menu_background_folder = os.path.join(res_folder, "start", "开始背景")
+        copy_files_to_directory(menu_background_folder, menu_textures_path)
+
+        # Copy files from Res/start/任务栏 to the respective directories
+        taskbar_folder = os.path.join(res_folder, "start", "任务栏")
+        copy_files_to_directory(taskbar_folder, taskbar_textures_path)
+
+        messagebox.showinfo("操作完成", "操作已完成！")
+    else:
+        res_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Res")
+
+        # Copy files from Res/start/win图标 to the respective directories
+        win_icon_folder = os.path.join(res_folder, "start", "win图标")
+        copy_files_to_directory(win_icon_folder, start_buttons_path)
+
+        # Copy files from Res/start/开始背景 to the respective directories
+        menu_background_folder = os.path.join(res_folder, "start", "开始背景")
+        copy_files_to_directory(menu_background_folder, menu_textures_path)
+
+        # Copy files from Res/start/任务栏 to the respective directories
+        taskbar_folder = os.path.join(res_folder, "start", "任务栏")
+        copy_files_to_directory(taskbar_folder, taskbar_textures_path)
+
+        messagebox.showinfo("操作完成", "操作已完成！")
+
+def clear_directory(directory_path):
+    for filename in os.listdir(directory_path):
+        if filename.endswith(".png"):
+            file_path = os.path.join(directory_path, filename)
+            os.remove(file_path)
+
+def copy_files_to_directory(source_folder, destination_folder):
+    for filename in os.listdir(source_folder):
+        if filename.endswith(".png"):
+            source_file_path = os.path.join(source_folder, filename)
+            destination_file_path = os.path.join(destination_folder, filename)
+            shutil.copyfile(source_file_path, destination_file_path)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+
+    clear_and_copy_files()
+
+    print("start资源文件复制完毕，请稍后手动调整设置")
+
+# 设置资源管理器背景
+def run_cmd(cmd):
+    try:
+        result = subprocess.run(cmd, shell=True, capture_output=False, text=True, check=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return result.returncode, result.stdout, result.stderr
+    except subprocess.CalledProcessError as e:
+        return e.returncode, e.stdout, e.stderr
+    except Exception as e:
+        return -1, "", str(e)
+
+if __name__ == "__main__":
+    # 获取当前脚本所在路径
+    script_directory = os.path.dirname(os.path.abspath(__file__))
+
+    # 定位"注册_Register.cmd"文件路径
+    cmd_file_path = os.path.join(script_directory, "..", "Tools", "Explorer Tool", "注册_Register.cmd")
+
+    # 运行"注册_Register.cmd"文件
+    returncode, stdout, stderr = run_cmd(cmd_file_path)
+
+    if returncode == 0:
+        print("文件管理器背景设置成功，将在您下次打开文件管理器时显示")
+        print(stdout)
+    else:
+        print("背景设置失败，原因如下")
+        print("Error:")
+        print(stderr)
 
     # 安装 Rainmeter
     rainmeter_install = os.path.abspath('../Tools/Rainmeter-install.exe')
@@ -180,74 +247,3 @@ process_name = "start Rainmeter.exe"
 restart_process(process_name)
 
 print("Rainmeter重启完毕，请稍后手动开启插件")
-
-#动态壁纸选择
-def install_dynamic_wallpaper():
-    # 这里是选项一的操作：运行上级目录中的 Tools 文件夹中的 lively.exe
-    tools_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Tools"))
-    lively_exe_path = os.path.join(tools_dir, "lively.exe")
-
-    if os.path.exists(lively_exe_path):
-        print("正在进行安装...")
-        # 弹出新的窗口显示即将开始安装信息
-        info_window = tk.Tk()
-        info_window.title("安装提示")
-        info_label = tk.Label(info_window, text="即将开始安装lively动态壁纸软件")
-        info_label.pack(padx=20, pady=10)
-
-        # 停留 3 秒
-        info_window.after(3000, lambda: run_lively_and_exit(lively_exe_path, info_window))
-    else:
-        messagebox.showerror("错误", "未找到 lively.exe，请确保文件存在于 Tools 文件夹中。")
-
-def run_lively_and_exit(lively_exe_path, window_to_close):
-    window_to_close.destroy()  # 关闭信息窗口
-    subprocess.run(lively_exe_path)
-    print("安装过程结束")
-
-def already_have_wallpaper():
-    # 这里是选项二的操作
-    # 添加选项二的具体操作，或者留空表示不进行任何操作
-    print("安装过程结束")
-
-def not_needed():
-    # 这里是选项三的操作
-    # 添加选项三的具体操作，或者留空表示不进行任何操作
-    print("安装过程结束")
-
-def show_choice_window():
-    # 创建主窗口
-    root = tk.Tk()
-    root.title("选择窗口")
-
-    # 定义选择窗口的回调函数
-    def on_yes():
-        install_dynamic_wallpaper()
-        root.destroy()  # 销毁选择窗口
-
-    def on_no_have():
-        already_have_wallpaper()
-        root.destroy()  # 销毁选择窗口
-
-    def on_no_need():
-        not_needed()
-        root.destroy()  # 销毁选择窗口
-
-    # 创建选择窗口的内容
-    label = tk.Label(root, text="是否安装动态壁纸软件")
-    label.pack(padx=20, pady=10)
-
-    yes_button = tk.Button(root, text="是", command=on_yes)
-    yes_button.pack(pady=5)
-
-    no_have_button = tk.Button(root, text="不，我已经有了", command=on_no_have)
-    no_have_button.pack(pady=5)
-
-    no_need_button = tk.Button(root, text="不，我不需要", command=on_no_need)
-    no_need_button.pack(pady=5)
-
-    # 进入主循环
-    root.mainloop()
-
-# 调用函数显示选择窗口
-show_choice_window()
