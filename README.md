@@ -53,3 +53,8 @@ Tools
 
 安装程序（存放本程序）
 
+
+
+V0.1 Python版本-By ChatGPT&LBY123165（已弃用）
+
+
